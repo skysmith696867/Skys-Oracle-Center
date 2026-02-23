@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Meme Form — Character Summoner</title>
+
+<style>
+  /* ✅ ONLY CHANGED: background = cartoon cloudy sky + 4 SKY hearts in corners */
+  body{
+    margin:0;
+    min-height:100vh;
+    display:grid;
+    place-items:center;
+    font-family: Georgia, "Times New Roman", serif;
+    position:relative;
+    overflow:hidden;
+
+    /* cartoon sky */
+    background:
+      radial-gradient(circle at 18% 18%, rgba(255,255,255,.85) 0 140px, transparent 160px),
+      radial-gradient(circle at 78% 22%, rgba(255,255,255,.80) 0 170px, transparent 200px),
+      radial-gradient(circle at 30% 75%, rgba(255,255,255,.70) 0 200px, transparent 240px),
+      radial-gradient(circle at 70% 78%, rgba(255,255,255,.65) 0 220px, transparent 260px),
+      linear-gradient(180deg, #a9dcff 0%, #d9c8ff 55%, #ffd0df 100%);
+  }
+
+  /* extra fluffy cloud haze */
+  body::before{
+    content:"";
+    position:absolute;
+    inset:-30px;
+    pointer-events:none;
+    z-index:0;
+    background:
+      radial-gradient(circle at 10% 40%, rgba(255,255,255,.38) 0 220px, transparent 320px),
+      radial-gradient(circle at 55% 30%, rgba(255,255,255,.30) 0 260px, transparent 360px),
+      radial-gradient(circle at 85% 55%, rgba(255,255,255,.34) 0 240px, transparent 340px),
+      radial-gradient(circle at 40% 90%, rgba(255,255,255,.22) 0 280px, transparent 380px);
+    filter: blur(1px);
+  }
+
+  /* 4 SKY hearts in the corners */
+  .corner-heart{
+    position:fixed;
+    width:120px;
+    height:120px;
+    z-index:1;
+    pointer-events:none;
+    filter: drop-shadow(0 8px 14px rgba(0,0,0,.18));
+  }
+  .corner-heart svg{ width:100%; height:100%; display:block; }
+  .tl{ top:18px; left:18px; }
+  .tr{ top:18px; right:18px; }
+  .bl{ bottom:18px; left:18px; }
+  .br{ bottom:18px; right:18px; }
+
+  /* keep your card above background layers */
+  .card{
+    width:min(760px, 94vw);
+    padding:40px 28px;
+    text-align:center;
+    color:#222;
+    position:relative;
+    z-index:2;
+  }
+
+  .line{
+    font-size:44px;
+    margin:16px 0;
+    display:flex;
+    gap:14px;
+    justify-content:center;
+    align-items:baseline;
+    flex-wrap:wrap;
+  }
+  select{
+    font: inherit;
+    font-size:40px;
+    padding:10px 58px 10px 18px;
+    border-radius:16px;
+    border:3px solid #8f8f8f;
+    background:linear-gradient(#f8f8f8, #e9e9e9);
+    color:#111;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.9), 0 2px 0 rgba(0,0,0,.08);
+    appearance:none;
+    -webkit-appearance:none;
+    -moz-appearance:none;
+    cursor:pointer;
+  }
+  .select-wrap{ position:relative; display:inline-block; }
+  .select-wrap::after{
+    content:"▼";
+    position:absolute;
+    right:18px;
+    top:50%;
+    transform:translateY(-50%);
+    font-size:22px;
+    color:#555;
+    pointer-events:none;
+  }
+  .small{ font-size:40px; opacity:.95; }
+  .narrow select{ width:150px; text-align-last:center; }
+
+  .btnrow{ margin-top:22px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  button{
+    font-size:26px;
+    padding:12px 22px;
+    border-radius:14px;
+    border:none;
+    background:#222;
+    color:#fff;
+    cursor:pointer;
+  }
+  button.secondary{ background:#444; }
+  button.ghost{ background:transparent; color:#222; border:2px solid #222; }
+
+  .resultWrap{
+    margin-top:28px;
+    display:none;
+    justify-content:center;
+  }
+  .resultCard{
+    width:min(680px, 92vw);
+    background:rgba(255,255,255,.55);
+    border:2px solid rgba(0,0,0,.25);
+    border-radius:18px;
+    padding:18px 18px 16px;
+    text-align:left;
+    box-shadow:0 6px 20px rgba(0,0,0,.08);
+  }
+  .top{
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+  .portrait{
+    width:110px;
+    height:110px;
+    border-radius:16px;
+    background:linear-gradient(#eee, #ddd);
+    border:2px solid rgba(0,0,0,.25);
+    display:grid;
+    place-items:center;
+    font-size:40px;
+    user-select:none;
+  }
+  .meta h2{
+    margin:0;
+    font-size:30px;
+    line-height:1.1;
+  }
+  .meta .sub{
+    margin-top:6px;
+    font-size:18px;
+    opacity:.85;
+  }
+
+  .chips{ margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; }
+  .chip{
+    font-size:14px;
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid rgba(0,0,0,.25);
+    background:rgba(255,255,255,.7);
+  }
+
+  .grid{
+    margin-top:14px;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px 14px;
+  }
+  .stat{
+    font-size:16px;
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    border-bottom:1px dashed rgba(0,0,0,.18);
+    padding-bottom:6px;
+  }
+  .desc{
+    margin-top:14px;
+    font-size:18px;
+    line-height:1.35;
+  }
+  .voice{
+    margin-top:12px;
+    padding:12px 12px;
+    border-radius:14px;
+    background:rgba(0,0,0,.06);
+    border:1px solid rgba(0,0,0,.12);
+    font-size:18px;
+  }
+  .foot{
+    margin-top:12px;
+    font-size:14px;
+    opacity:.75;
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  @media (max-width:560px){
+    .line{ font-size:36px; }
+    select{ font-size:34px; }
+    .grid{ grid-template-columns:1fr; }
+    .corner-heart{ width:92px; height:92px; }
+  }
+</style>
+</head>
+
+<body>
+  <!-- ✅ 4 corner hearts (all say SKY) -->
+  <div class="corner-heart tl">
+    <svg viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ff3b6b"/>
+          <stop offset="1" stop-color="#ff9db5"/>
+        </linearGradient>
+      </defs>
+      <path d="M90 156c-2.2 0-4.4-.8-6.1-2.3C64.9 137.1 33 113.8 33 79.7 33 60.8 46.8 47 65.7 47c10.6 0 20.5 5 26.8 13.1C98.8 52 108.7 47 119.3 47 138.2 47 152 60.8 152 79.7c0 34.1-31.9 57.4-50.9 74-1.7 1.5-3.9 2.3-6.1 2.3z"
+            fill="url(#g1)" stroke="#a10026" stroke-width="6" stroke-linejoin="round"/>
+      <text x="90" y="96" text-anchor="middle" font-family="Georgia" font-size="30" font-weight="700" fill="#fff">SKY</text>
+    </svg>
+  </div>
+
+  <div class="corner-heart tr">
+    <svg viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ff2d55"/>
+          <stop offset="1" stop-color="#ff7aa2"/>
+        </linearGradient>
+      </defs>
+      <path d="M90 156c-2.2 0-4.4-.8-6.1-2.3C64.9 137.1 33 113.8 33 79.7 33 60.8 46.8 47 65.7 47c10.6 0 20.5 5 26.8 13.1C98.8 52 108.7 47 119.3 47 138.2 47 152 60.8 152 79.7c0 34.1-31.9 57.4-50.9 74-1.7 1.5-3.9 2.3-6.1 2.3z"
+            fill="url(#g2)" stroke="#a10026" stroke-width="6" stroke-linejoin="round"/>
+      <text x="90" y="96" text-anchor="middle" font-family="Georgia" font-size="30" font-weight="700" fill="#fff">SKY</text>
+    </svg>
+  </div>
+
+  <div class="corner-heart bl">
+    <svg viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ff4d6d"/>
+          <stop offset="1" stop-color="#ffb3c1"/>
+        </linearGradient>
+      </defs>
+      <path d="M90 156c-2.2 0-4.4-.8-6.1-2.3C64.9 137.1 33 113.8 33 79.7 33 60.8 46.8 47 65.7 47c10.6 0 20.5 5 26.8 13.1C98.8 52 108.7 47 119.3 47 138.2 47 152 60.8 152 79.7c0 34.1-31.9 57.4-50.9 74-1.7 1.5-3.9 2.3-6.1 2.3z"
+            fill="url(#g3)" stroke="#a10026" stroke-width="6" stroke-linejoin="round"/>
+      <text x="90" y="96" text-anchor="middle" font-family="Georgia" font-size="30" font-weight="700" fill="#fff">SKY</text>
+    </svg>
+  </div>
+
+  <div class="corner-heart br">
+    <svg viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g4" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ff1f4b"/>
+          <stop offset="1" stop-color="#ff9bb1"/>
+        </linearGradient>
+      </defs>
+      <path d="M90 156c-2.2 0-4.4-.8-6.1-2.3C64.9 137.1 33 113.8 33 79.7 33 60.8 46.8 47 65.7 47c10.6 0 20.5 5 26.8 13.1C98.8 52 108.7 47 119.3 47 138.2 47 152 60.8 152 79.7c0 34.1-31.9 57.4-50.9 74-1.7 1.5-3.9 2.3-6.1 2.3z"
+            fill="url(#g4)" stroke="#a10026" stroke-width="6" stroke-linejoin="round"/>
+      <text x="90" y="96" text-anchor="middle" font-family="Georgia" font-size="30" font-weight="700" fill="#fff">SKY</text>
+    </svg>
+  </div>
+
+<form class="card" id="memeForm">
+  <div class="line">
+    <span>I am a</span>
+    <span class="select-wrap">
+      <select id="who">
+        <option>female angel</option>
+        <option>male angel</option>
+        <option>cryptid</option>
+        <option>emotionally unavailable poet</option>
+      </select>
+    </span>
+  </div>
+
+  <div class="line">
+    <span>seeking a</span>
+    <span class="select-wrap">
+      <select id="seeking">
+        <option>vampire</option>
+        <option>werewolf</option>
+        <option>final boss</option>
+        <option>therapist</option>
+      </select>
+    </span>
+  </div>
+
+  <div class="line small"><span>between the ages of</span></div>
+
+  <div class="line">
+    <span class="select-wrap narrow">
+      <select id="ageMin">
+        <option>18</option><option>21</option><option>25</option><option>30</option>
+      </select>
+    </span>
+    <span>and</span>
+    <span class="select-wrap narrow">
+      <select id="ageMax">
+        <option>1000+</option><option>5000+</option><option>∞</option>
+      </select>
+    </span>
+  </div>
+
+  <div class="line">
+    <span>who died</span>
+    <span class="select-wrap">
+      <select id="died">
+        <option>tragically</option>
+        <option>mysteriously</option>
+        <option>dramatically</option>
+        <option>for the plot</option>
+      </select>
+    </span>
+  </div>
+
+  <div class="btnrow">
+    <button type="submit">Summon</button>
+    <button type="button" class="ghost" id="rerollBtn">Reroll</button>
+    <button type="button" class="secondary" id="shareBtn">Share</button>
+    <button type="button" class="secondary" id="copyBtn">Copy</button>
+  </div>
+
+  <div class="resultWrap" id="resultWrap">
+    <div class="resultCard" id="resultCard"></div>
+  </div>
+</form>
+
+<script>
+/* ---------- 1) CHARACTER POOL (safe: fictional + public-domain-ish vibes, no images needed) ---------- */
+/* You can add/edit entries any time. The matching uses tags + weights. */
+const CHARACTERS = [
+  {
+    name: "Alucard",
+    from: "Hellsing (anime)",
+    archetype: "Ancient Predator Prince",
+    tags: ["vampire","ancient","dangerous","elegant","predatory","dark"],
+    stats: { menace: 10, tenderness: 3, chaos: 7, loyalty: 6, intellect: 8 },
+    voices: [
+      "Don’t look away. I only bite the ones I respect.",
+      "You asked for eternity. Be careful who you invite."
+    ],
+    emoji:"🦇"
+  },
+  {
+    name: "Dracula",
+    from: "Classic Gothic",
+    archetype: "Aristocratic Nightlord",
+    tags: ["vampire","ancient","elegant","tragic","romantic","dark"],
+    stats: { menace: 8, tenderness: 6, chaos: 4, loyalty: 5, intellect: 7 },
+    voices: [
+      "I have lived long enough to miss my own heartbeat.",
+      "Say my name like a dare, and I will answer."
+    ],
+    emoji:"🕯️"
+  },
+  {
+    name: "Geralt of Rivia",
+    from: "The Witcher",
+    archetype: "Feral Protector",
+    tags: ["werewolf","hunter","protective","reserved","loyal","tired"],
+    stats: { menace: 7, tenderness: 6, chaos: 3, loyalty: 9, intellect: 7 },
+    voices: [
+      "If you’re trouble, you’re my kind of trouble.",
+      "Stay behind me. Or don’t. You look like you bite back."
+    ],
+    emoji:"🐺"
+  },
+  {
+    name: "Inuyasha",
+    from: "Inuyasha",
+    archetype: "Hot-Tempered Half-Demon",
+    tags: ["werewolf","feral","chaotic","protective","tsundere","loud"],
+    stats: { menace: 6, tenderness: 5, chaos: 9, loyalty: 7, intellect: 5 },
+    voices: [
+      "Quit staring. I’m not here to be cute.",
+      "If anyone touches you, I’ll make it everybody’s problem."
+    ],
+    emoji:"🌙"
+  },
+  {
+    name: "Sephiroth",
+    from: "Final Fantasy",
+    archetype: "Mythic Final Boss",
+    tags: ["final boss","cold","mythic","beautiful","doom","control"],
+    stats: { menace: 10, tenderness: 1, chaos: 6, loyalty: 2, intellect: 9 },
+    voices: [
+      "You’re drawn to catastrophes. How honest of you.",
+      "Come closer. I want to see what you’re made of."
+    ],
+    emoji:"🗡️"
+  },
+  {
+    name: "Gojo Satoru",
+    from: "Jujutsu Kaisen",
+    archetype: "Playful God-Mode",
+    tags: ["final boss","chaotic","teasing","overpowered","funny","dangerous"],
+    stats: { menace: 7, tenderness: 6, chaos: 10, loyalty: 7, intellect: 8 },
+    voices: [
+      "You picked ‘final boss’ like you weren’t gonna flirt with danger.",
+      "Relax. I’ll ruin you gently. (Emotionally.)"
+    ],
+    emoji:"🌀"
+  },
+  {
+    name: "Dr. Hannibal Lecter",
+    from: "Hannibal",
+    archetype: "Elegant Mind Sculptor",
+    tags: ["therapist","intellect","dark","manipulative","elegant","observant"],
+    stats: { menace: 9, tenderness: 4, chaos: 2, loyalty: 3, intellect: 10 },
+    voices: [
+      "Tell me what you crave. I’ll translate it into truth.",
+      "You’re not broken. You’re… interestingly assembled."
+    ],
+    emoji:"🍷"
+  },
+  {
+    name: "Dr. Scully",
+    from: "The X-Files",
+    archetype: "Calm Rational Anchor",
+    tags: ["therapist","stable","intellect","protective","skeptical","warm"],
+    stats: { menace: 2, tenderness: 8, chaos: 2, loyalty: 9, intellect: 9 },
+    voices: [
+      "Breathe. Now tell me the story without punishing yourself.",
+      "You’re allowed to want things without it being a crisis."
+    ],
+    emoji:"🧠"
+  }
+];
+
+/* ---------- 2) MATCHING RULES ---------- */
+/* Each dropdown choice maps to tags that should be rewarded */
+const TAG_MAP = {
+  who: {
+    "female angel": ["elegant","romantic","tragic"],
+    "male angel": ["elegant","control","protective"],
+    "cryptid": ["feral","chaotic","dangerous"],
+    "emotionally unavailable poet": ["tragic","dark","observant"]
+  },
+  seeking: {
+    "vampire": ["vampire","ancient","elegant","dark"],
+    "werewolf": ["werewolf","feral","protective"],
+    "final boss": ["final boss","mythic","dangerous","control"],
+    "therapist": ["therapist","stable","intellect","observant"]
+  },
+  died: {
+    "tragically": ["tragic","romantic"],
+    "mysteriously": ["dark","observant"],
+    "dramatically": ["chaotic","beautiful"],
+    "for the plot": ["doom","mythic","chaotic"]
+  }
+};
+
+/* ---------- utilities ---------- */
+const $ = (id)=>document.getElementById(id);
+const rand = (n)=>Math.floor(Math.random()*n);
+const pick = (arr)=>arr[rand(arr.length)];
+
+function scoreCharacter(char, chosenTags){
+  // base: +2 per tag match, +1 if "close vibe" (soft match groups)
+  let score = 0;
+  for(const t of chosenTags){
+    if(char.tags.includes(t)) score += 2;
+  }
+
+  // vibe groups (optional seasoning)
+  const VIBE_GROUPS = [
+    ["ancient","doom","mythic"],
+    ["feral","werewolf","hunter"],
+    ["elegant","beautiful","romantic"],
+    ["observant","intellect","stable"]
+  ];
+  for(const group of VIBE_GROUPS){
+    const hasChosen = group.some(t=>chosenTags.includes(t));
+    const hasChar = group.some(t=>char.tags.includes(t));
+    if(hasChosen && hasChar) score += 1;
+  }
+
+  // nudge: seeking choice matters most
+  if(chosenTags.includes("vampire") && char.tags.includes("vampire")) score += 3;
+  if(chosenTags.includes("werewolf") && char.tags.includes("werewolf")) score += 3;
+  if(chosenTags.includes("final boss") && char.tags.includes("final boss")) score += 3;
+  if(chosenTags.includes("therapist") && char.tags.includes("therapist")) score += 3;
+
+  return score;
+}
+
+function buildChosenTags(){
+  const who = $("who").value;
+  const seeking = $("seeking").value;
+  const died = $("died").value;
+
+  const tags = [
+    ...TAG_MAP.who[who],
+    ...TAG_MAP.seeking[seeking],
+    ...TAG_MAP.died[died]
+  ];
+  // de-dupe
+  return [...new Set(tags)];
+}
+
+function makeResult(){
+  const who = $("who").value;
+  const seeking = $("seeking").value;
+  const ageMin = $("ageMin").value;
+  const ageMax = $("ageMax").value;
+  const died = $("died").value;
+
+  const chosenTags = buildChosenTags();
+
+  // score all, take top tier, then RANDOMIZE within it
+  const scored = CHARACTERS.map(c => ({ c, s: scoreCharacter(c, chosenTags) }))
+                          .sort((a,b)=>b.s-a.s);
+
+  const topScore = scored[0].s;
+  const topPool = scored.filter(x => x.s >= topScore - 1).map(x=>x.c); // “near-top” pool
+  const match = pick(topPool);
+
+  // psych read: show matched tags + percent
+  const matchedTags = chosenTags.filter(t => match.tags.includes(t));
+  const percent = Math.min(98, Math.max(55, 55 + matchedTags.length*6 + rand(8))); // fun fake psych %
+
+  const voice = pick(match.voices);
+
+  const resultText =
+`I am a ${who} seeking a ${seeking} between the ages of ${ageMin} and ${ageMax} who died ${died}.
+Match: ${match.name} (${match.from}) — ${percent}%`;
+
+  return { match, percent, matchedTags, voice, who, seeking, ageMin, ageMax, died, resultText };
+}
+
+function renderResult(res){
+  const { match, percent, matchedTags, voice, who, seeking, ageMin, ageMax, died } = res;
+
+  $("resultWrap").style.display = "flex";
+  $("resultCard").innerHTML = `
+    <div class="top">
+      <div class="portrait" aria-hidden="true">${match.emoji}</div>
+      <div class="meta">
+        <h2>${match.name}</h2>
+        <div class="sub">${match.from} • <em>${match.archetype}</em></div>
+        <div class="sub"><strong>Psych Match:</strong> ${percent}%</div>
+      </div>
+    </div>
+
+    <div class="chips">
+      <span class="chip">You: ${who}</span>
+      <span class="chip">Seeking: ${seeking}</span>
+      <span class="chip">Age: ${ageMin}–${ageMax}</span>
+      <span class="chip">Died: ${died}</span>
+    </div>
+
+    <div class="chips">
+      ${matchedTags.slice(0,8).map(t=>`<span class="chip">✔ ${t}</span>`).join("")}
+    </div>
+
+    <div class="grid">
+      ${Object.entries(match.stats).map(([k,v]) => `
+        <div class="stat"><span>${k}</span><strong>${"█".repeat(v)}${"░".repeat(10-v)}</strong></div>
+      `).join("")}
+    </div>
+
+    <div class="desc">
+      <strong>Why this works:</strong>
+      You picked <em>${seeking}</em> energy + <em>${died}</em> arc, so you attract a ${match.archetype.toLowerCase()} who can hold your vibe without blinking.
+    </div>
+
+    <div class="voice">
+      <strong>Voice line:</strong> “${voice}”
+    </div>
+
+    <div class="foot">
+      <span>Reroll keeps your choices, changes the character (within your match pool).</span>
+      <span>Share/Copy makes it post-ready.</span>
+    </div>
+  `;
+}
+
+/* ---------- 3) SHAREABLE RESULTS (URL params + copy + web share) ---------- */
+function setURLParams(){
+  const params = new URLSearchParams({
+    who: $("who").value,
+    seeking: $("seeking").value,
+    ageMin: $("ageMin").value,
+    ageMax: $("ageMax").value,
+    died: $("died").value
+  });
+  const newUrl = `${location.origin}${location.pathname}?${params.toString()}`;
+  history.replaceState({}, "", newUrl);
+}
+
+function loadFromURL(){
+  const p = new URLSearchParams(location.search);
+  const ids = ["who","seeking","ageMin","ageMax","died"];
+  for(const id of ids){
+    const v = p.get(id);
+    if(v){
+      // only set if option exists
+      const el = $(id);
+      if([...el.options].some(o => o.value === v)) el.value = v;
+    }
+  }
+}
+
+let lastResult = null;
+
+$("memeForm").addEventListener("submit", (e)=>{
+  e.preventDefault();
+  setURLParams();
+  lastResult = makeResult();
+  renderResult(lastResult);
+});
+
+$("rerollBtn").addEventListener("click", ()=>{
+  // reroll only works after first summon
+  setURLParams();
+  lastResult = makeResult();
+  renderResult(lastResult);
+});
+
+$("copyBtn").addEventListener("click", async ()=>{
+  if(!lastResult) lastResult = makeResult();
+  const shareLine = `${lastResult.resultText}\n${location.href}`;
+  try{
+    await navigator.clipboard.writeText(shareLine);
+    alert("Copied. Go be iconic.");
+  }catch{
+    prompt("Copy this:", shareLine);
+  }
+});
+
+$("shareBtn").addEventListener("click", async ()=>{
+  if(!lastResult) lastResult = makeResult();
+  const text = lastResult.resultText;
+  const url = location.href;
+
+  if(navigator.share){
+    try{
+      await navigator.share({ title:"Character Summoner", text, url });
+    }catch{ /* user cancelled */ }
+  }else{
+    // fallback: copy
+    const shareLine = `${text}\n${url}`;
+    try{
+      await navigator.clipboard.writeText(shareLine);
+      alert("Sharing not supported here—copied instead.");
+    }catch{
+      prompt("Copy this:", shareLine);
+    }
+  }
+});
+
+/* init */
+loadFromURL();
+</script>
+</body>
+</html>
